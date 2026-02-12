@@ -47,7 +47,7 @@ Default vault path:
 
 - `~/.keycraft/vault.json`
 
-Override with `--vault` on commands.
+Override with `--vault` on commands, or set `KEYCRAFT_VAULT` for a default custom path.
 
 ## Commands
 

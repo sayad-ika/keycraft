@@ -32,6 +32,7 @@ const (
 	keyLength         = 32
 	saltLength        = 16
 	defaultVaultFile  = "vault.json"
+	vaultEnvVar       = "KEYCRAFT_VAULT"
 )
 
 var errEntryNotFound = errors.New("entry not found")
@@ -1184,6 +1185,9 @@ func entryTimestamp(e entry) (time.Time, bool) {
 func resolveVaultPath(pathFlag string) (string, error) {
 	if strings.TrimSpace(pathFlag) != "" {
 		return filepath.Abs(pathFlag)
+	}
+	if envPath := strings.TrimSpace(os.Getenv(vaultEnvVar)); envPath != "" {
+		return filepath.Abs(envPath)
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -119,6 +121,52 @@ func TestParseTagsDeduplicatesCaseInsensitive(t *testing.T) {
 	}
 	if got[0] != "work" || got[1] != "banking" || got[2] != "personal" {
 		t.Fatalf("unexpected tag normalization order: %v", got)
+	}
+}
+
+func TestResolveVaultPathUsesEnvVar(t *testing.T) {
+	t.Setenv(vaultEnvVar, "./custom-vault.json")
+	got, err := resolveVaultPath("")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	want, err := filepath.Abs("./custom-vault.json")
+	if err != nil {
+		t.Fatalf("filepath.Abs returned error: %v", err)
+	}
+	if filepath.Clean(got) != filepath.Clean(want) {
+		t.Fatalf("expected env-based path %q, got %q", want, got)
+	}
+}
+
+func TestResolveVaultPathFlagOverridesEnv(t *testing.T) {
+	t.Setenv(vaultEnvVar, "./env-vault.json")
+	got, err := resolveVaultPath("./flag-vault.json")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	want, err := filepath.Abs("./flag-vault.json")
+	if err != nil {
+		t.Fatalf("filepath.Abs returned error: %v", err)
+	}
+	if filepath.Clean(got) != filepath.Clean(want) {
+		t.Fatalf("expected flag-based path %q, got %q", want, got)
+	}
+}
+
+func TestResolveVaultPathDefaultWhenUnset(t *testing.T) {
+	t.Setenv(vaultEnvVar, "")
+	got, err := resolveVaultPath("")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("os.UserHomeDir returned error: %v", err)
+	}
+	want := filepath.Join(home, ".keycraft", defaultVaultFile)
+	if filepath.Clean(got) != filepath.Clean(want) {
+		t.Fatalf("expected default path %q, got %q", want, got)
 	}
 }
 
