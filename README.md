@@ -39,6 +39,8 @@ keycraft update --id <entry-id> --password -
 keycraft delete --id <entry-id>
 keycraft generate --length 32
 keycraft change-master
+keycraft backup
+keycraft audit --fail-on-issues
 ```
 
 Default vault path:
@@ -57,3 +59,18 @@ Override with `--vault` on commands.
 - `delete`: delete entry (`--id` required, prompt unless `--force`)
 - `generate`: generate strong random password
 - `change-master`: rotate master password and re-encrypt vault
+- `backup`: create timestamped encrypted backup of the vault file
+- `audit`: detect weak, reused, stale, duplicate, and malformed entries
+
+## Additional examples
+
+```bash
+# write backup to default location: ~/.keycraft/backups/vault-<timestamp>.json
+keycraft backup
+
+# write backup to custom path
+keycraft backup --out ./vault-backup.json
+
+# enforce policy in CI/local checks (non-zero exit when issues exist)
+keycraft audit --min-length 14 --max-age-days 365 --fail-on-issues
+```

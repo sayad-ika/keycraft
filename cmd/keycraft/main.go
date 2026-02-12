@@ -78,6 +78,14 @@ type optionalString struct {
 	set   bool
 }
 
+type auditIssue struct {
+	Kind     string
+	EntryID  string
+	Service  string
+	Username string
+	Detail   string
+}
+
 func (o *optionalString) String() string {
 	return o.value
 }
@@ -118,6 +126,10 @@ func main() {
 		err = runGenerate(os.Args[2:])
 	case "change-master":
 		err = runChangeMaster(os.Args[2:])
+	case "backup":
+		err = runBackup(os.Args[2:])
+	case "audit":
+		err = runAudit(os.Args[2:])
 	default:
 		printUsage()
 		err = fmt.Errorf("unknown command %q", command)
@@ -599,6 +611,145 @@ func runChangeMaster(args []string) error {
 	return nil
 }
 
+func runBackup(args []string) error {
+	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	var vaultPath, outputPath string
+	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
+	fs.StringVar(&outputPath, "out", "", "Backup output path (default: <vault-dir>/backups/vault-<timestamp>.json)")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("unexpected arguments: %s", strings.Join(fs.Args(), " "))
+	}
+
+	sourcePath, err := resolveVaultPath(vaultPath)
+	if err != nil {
+		return err
+	}
+	sourcePath, err = filepath.Abs(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	raw, err := os.ReadFile(sourcePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("vault not found at %s", sourcePath)
+		}
+		return err
+	}
+
+	var destinationPath string
+	if strings.TrimSpace(outputPath) != "" {
+		destinationPath, err = filepath.Abs(outputPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		stamp := time.Now().UTC().Format("20060102-150405")
+		destinationPath = filepath.Join(filepath.Dir(sourcePath), "backups", fmt.Sprintf("vault-%s.json", stamp))
+	}
+
+	if strings.EqualFold(sourcePath, destinationPath) {
+		return errors.New("backup output path must be different from vault path")
+	}
+	if _, err := os.Stat(destinationPath); err == nil {
+		return fmt.Errorf("backup file already exists: %s", destinationPath)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	if err := writeFileAtomic(destinationPath, raw); err != nil {
+		return err
+	}
+	if runtime.GOOS != "windows" {
+		_ = os.Chmod(destinationPath, 0o600)
+	}
+
+	checksum := sha256.Sum256(raw)
+	fmt.Printf("Backup created: %s\n", destinationPath)
+	fmt.Printf("SHA256: %x\n", checksum)
+	return nil
+}
+
+func runAudit(args []string) error {
+	fs := flag.NewFlagSet("audit", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	var vaultPath string
+	var minLength, maxAgeDays int
+	var failOnIssues bool
+	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
+	fs.IntVar(&minLength, "min-length", 14, "Minimum password length before flagged weak")
+	fs.IntVar(&maxAgeDays, "max-age-days", 365, "Maximum entry age in days before flagged stale (0 disables)")
+	fs.BoolVar(&failOnIssues, "fail-on-issues", false, "Exit with error if any issues are found")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("unexpected arguments: %s", strings.Join(fs.Args(), " "))
+	}
+	if minLength < 8 {
+		return errors.New("--min-length must be at least 8")
+	}
+	if maxAgeDays < 0 {
+		return errors.New("--max-age-days must be >= 0")
+	}
+
+	path, err := resolveVaultPath(vaultPath)
+	if err != nil {
+		return err
+	}
+	master, err := promptMasterPassword()
+	if err != nil {
+		return err
+	}
+	_, data, err := loadVault(path, master)
+	if err != nil {
+		return err
+	}
+
+	issues := auditEntries(data.Entries, minLength, maxAgeDays, time.Now().UTC())
+	if len(issues) == 0 {
+		fmt.Printf("Audit complete: no issues found across %d entries.\n", len(data.Entries))
+		return nil
+	}
+
+	counts := map[string]int{}
+	for _, issue := range issues {
+		counts[issue.Kind]++
+	}
+	kinds := make([]string, 0, len(counts))
+	for k := range counts {
+		kinds = append(kinds, k)
+	}
+	sort.Strings(kinds)
+
+	fmt.Printf("Audit complete: %d issues across %d entries.\n", len(issues), len(data.Entries))
+	for _, kind := range kinds {
+		fmt.Printf("  - %s: %d\n", kind, counts[kind])
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(w, "ISSUE\tID\tSERVICE\tUSERNAME\tDETAIL")
+	for _, issue := range issues {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", issue.Kind, issue.EntryID, issue.Service, issue.Username, issue.Detail)
+	}
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
+	if failOnIssues {
+		return errors.New("audit found issues")
+	}
+	return nil
+}
+
 func createVault(path, master string) error {
 	salt, err := randomBytes(saltLength)
 	if err != nil {
@@ -875,6 +1026,159 @@ func matchesSearch(e entry, search string) bool {
 		}
 	}
 	return false
+}
+
+func auditEntries(entries []entry, minLength, maxAgeDays int, now time.Time) []auditIssue {
+	issues := make([]auditIssue, 0)
+	passwordToEntries := map[string][]entry{}
+	seenAccount := map[string]string{}
+
+	maxAge := time.Duration(maxAgeDays) * 24 * time.Hour
+
+	for _, e := range entries {
+		accountKey := strings.ToLower(strings.TrimSpace(e.Service)) + "\x00" + strings.ToLower(strings.TrimSpace(e.Username))
+		if prevID, exists := seenAccount[accountKey]; exists && accountKey != "\x00" {
+			issues = append(issues, auditIssue{
+				Kind:     "duplicate_account",
+				EntryID:  e.ID,
+				Service:  e.Service,
+				Username: e.Username,
+				Detail:   fmt.Sprintf("same service/username as entry %s", prevID),
+			})
+		} else {
+			seenAccount[accountKey] = e.ID
+		}
+
+		password := strings.TrimSpace(e.Password)
+		if password == "" {
+			issues = append(issues, auditIssue{
+				Kind:     "missing_password",
+				EntryID:  e.ID,
+				Service:  e.Service,
+				Username: e.Username,
+				Detail:   "entry has empty password",
+			})
+			continue
+		}
+
+		if isWeakPassword(password, minLength) {
+			issues = append(issues, auditIssue{
+				Kind:     "weak_password",
+				EntryID:  e.ID,
+				Service:  e.Service,
+				Username: e.Username,
+				Detail:   fmt.Sprintf("below policy (min length %d and mixed character classes)", minLength),
+			})
+		}
+
+		passwordToEntries[password] = append(passwordToEntries[password], e)
+
+		if maxAgeDays > 0 {
+			entryTime, ok := entryTimestamp(e)
+			if !ok {
+				issues = append(issues, auditIssue{
+					Kind:     "invalid_timestamp",
+					EntryID:  e.ID,
+					Service:  e.Service,
+					Username: e.Username,
+					Detail:   "created_at/updated_at is invalid",
+				})
+				continue
+			}
+			if now.Sub(entryTime) > maxAge {
+				issues = append(issues, auditIssue{
+					Kind:     "stale_password",
+					EntryID:  e.ID,
+					Service:  e.Service,
+					Username: e.Username,
+					Detail:   fmt.Sprintf("not updated in the last %d days", maxAgeDays),
+				})
+			}
+		}
+	}
+
+	for _, shared := range passwordToEntries {
+		if len(shared) < 2 {
+			continue
+		}
+		for _, e := range shared {
+			issues = append(issues, auditIssue{
+				Kind:     "reused_password",
+				EntryID:  e.ID,
+				Service:  e.Service,
+				Username: e.Username,
+				Detail:   fmt.Sprintf("password reused across %d entries", len(shared)),
+			})
+		}
+	}
+
+	sort.Slice(issues, func(i, j int) bool {
+		if issues[i].Kind != issues[j].Kind {
+			return issues[i].Kind < issues[j].Kind
+		}
+		if !strings.EqualFold(issues[i].Service, issues[j].Service) {
+			return strings.ToLower(issues[i].Service) < strings.ToLower(issues[j].Service)
+		}
+		if !strings.EqualFold(issues[i].Username, issues[j].Username) {
+			return strings.ToLower(issues[i].Username) < strings.ToLower(issues[j].Username)
+		}
+		return strings.ToLower(issues[i].EntryID) < strings.ToLower(issues[j].EntryID)
+	})
+
+	return issues
+}
+
+func isWeakPassword(password string, minLength int) bool {
+	if len([]rune(password)) < minLength {
+		return true
+	}
+	return passwordClassCount(password) < 3
+}
+
+func passwordClassCount(password string) int {
+	var hasLower, hasUpper, hasDigit, hasSymbol bool
+	for _, r := range password {
+		switch {
+		case r >= 'a' && r <= 'z':
+			hasLower = true
+		case r >= 'A' && r <= 'Z':
+			hasUpper = true
+		case r >= '0' && r <= '9':
+			hasDigit = true
+		default:
+			hasSymbol = true
+		}
+	}
+	count := 0
+	if hasLower {
+		count++
+	}
+	if hasUpper {
+		count++
+	}
+	if hasDigit {
+		count++
+	}
+	if hasSymbol {
+		count++
+	}
+	return count
+}
+
+func entryTimestamp(e entry) (time.Time, bool) {
+	candidates := []string{strings.TrimSpace(e.UpdatedAt), strings.TrimSpace(e.CreatedAt)}
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		if ts, err := time.Parse(time.RFC3339, candidate); err == nil {
+			return ts, true
+		}
+		if ts, err := time.Parse(time.RFC3339Nano, candidate); err == nil {
+			return ts, true
+		}
+	}
+	return time.Time{}, false
 }
 
 func resolveVaultPath(pathFlag string) (string, error) {
@@ -1163,6 +1467,8 @@ Commands:
   delete           Delete an entry by ID
   generate         Generate a strong random password
   change-master    Rotate master password
+  backup           Create encrypted backup copy of vault file
+  audit            Audit vault for weak/reused/stale credentials
   help             Show this help text
 
 Examples:
@@ -1172,5 +1478,7 @@ Examples:
   keycraft get --service github --username alice --show-password
   keycraft update --id <entry-id> --password -
   keycraft delete --id <entry-id>
-  keycraft generate --length 32`)
+  keycraft generate --length 32
+  keycraft backup
+  keycraft audit --fail-on-issues`)
 }
