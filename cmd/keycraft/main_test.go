@@ -170,6 +170,16 @@ func TestResolveVaultPathDefaultWhenUnset(t *testing.T) {
 	}
 }
 
+func TestVersionString(t *testing.T) {
+	got := versionString()
+	if !strings.Contains(got, appName) {
+		t.Fatalf("version string missing app name %q: %q", appName, got)
+	}
+	if !strings.Contains(got, appVersion) {
+		t.Fatalf("version string missing app version %q: %q", appVersion, got)
+	}
+}
+
 func assertHasIssue(t *testing.T, issues []auditIssue, kind, entryID string) {
 	t.Helper()
 	for _, issue := range issues {

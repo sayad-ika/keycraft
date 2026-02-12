@@ -41,6 +41,7 @@ keycraft generate --length 32
 keycraft change-master
 keycraft backup
 keycraft audit --fail-on-issues
+keycraft version
 ```
 
 Default vault path:
@@ -61,6 +62,7 @@ Override with `--vault` on commands, or set `KEYCRAFT_VAULT` for a default custo
 - `change-master`: rotate master password and re-encrypt vault
 - `backup`: create timestamped encrypted backup of the vault file
 - `audit`: detect weak, reused, stale, duplicate, and malformed entries
+- `version`: print CLI version
 
 ## Additional examples
 
