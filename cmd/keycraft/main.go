@@ -27,11 +27,14 @@ import (
 )
 
 const (
+	appName           = "keycraft"
+	appVersion        = "0.3.0"
 	vaultVersion      = 1
 	defaultIterations = 210_000
 	keyLength         = 32
 	saltLength        = 16
 	defaultVaultFile  = "vault.json"
+	vaultEnvVar       = "KEYCRAFT_VAULT"
 )
 
 var errEntryNotFound = errors.New("entry not found")
@@ -103,6 +106,10 @@ func main() {
 	}
 
 	command := os.Args[1]
+	if command == "version" || command == "-v" || command == "--version" {
+		fmt.Println(versionString())
+		return
+	}
 	if command == "help" || command == "-h" || command == "--help" {
 		printUsage()
 		return
@@ -130,6 +137,9 @@ func main() {
 		err = runBackup(os.Args[2:])
 	case "audit":
 		err = runAudit(os.Args[2:])
+	case "version":
+		fmt.Println(versionString())
+		return
 	default:
 		printUsage()
 		err = fmt.Errorf("unknown command %q", command)
@@ -1185,6 +1195,9 @@ func resolveVaultPath(pathFlag string) (string, error) {
 	if strings.TrimSpace(pathFlag) != "" {
 		return filepath.Abs(pathFlag)
 	}
+	if envPath := strings.TrimSpace(os.Getenv(vaultEnvVar)); envPath != "" {
+		return filepath.Abs(envPath)
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("unable to determine home directory: %w", err)
@@ -1452,6 +1465,10 @@ func cryptoRandInt(max int) (int, error) {
 	return int(n.Int64()), nil
 }
 
+func versionString() string {
+	return fmt.Sprintf("%s %s", appName, appVersion)
+}
+
 func printUsage() {
 	fmt.Println(`keycraft - local-first offline password manager
 
@@ -1469,6 +1486,7 @@ Commands:
   change-master    Rotate master password
   backup           Create encrypted backup copy of vault file
   audit            Audit vault for weak/reused/stale credentials
+  version          Print CLI version
   help             Show this help text
 
 Examples:
@@ -1480,5 +1498,6 @@ Examples:
   keycraft delete --id <entry-id>
   keycraft generate --length 32
   keycraft backup
-  keycraft audit --fail-on-issues`)
+  keycraft audit --fail-on-issues
+  keycraft version`)
 }
