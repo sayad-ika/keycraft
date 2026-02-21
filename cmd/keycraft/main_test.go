@@ -130,13 +130,8 @@ func TestResolveVaultPathUsesEnvVar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveVaultPath returned error: %v", err)
 	}
-	want, err := filepath.Abs("./custom-vault.json")
-	if err != nil {
-		t.Fatalf("filepath.Abs returned error: %v", err)
-	}
-	if filepath.Clean(got) != filepath.Clean(want) {
-		t.Fatalf("expected env-based path %q, got %q", want, got)
-	}
+	want := mustAbsPath(t, "./custom-vault.json")
+	assertPathEqual(t, got, want, "expected env-based path")
 }
 
 func TestResolveVaultPathFlagOverridesEnv(t *testing.T) {
@@ -145,13 +140,8 @@ func TestResolveVaultPathFlagOverridesEnv(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveVaultPath returned error: %v", err)
 	}
-	want, err := filepath.Abs("./flag-vault.json")
-	if err != nil {
-		t.Fatalf("filepath.Abs returned error: %v", err)
-	}
-	if filepath.Clean(got) != filepath.Clean(want) {
-		t.Fatalf("expected flag-based path %q, got %q", want, got)
-	}
+	want := mustAbsPath(t, "./flag-vault.json")
+	assertPathEqual(t, got, want, "expected flag-based path")
 }
 
 func TestResolveVaultPathDefaultWhenUnset(t *testing.T) {
@@ -165,9 +155,7 @@ func TestResolveVaultPathDefaultWhenUnset(t *testing.T) {
 		t.Fatalf("os.UserHomeDir returned error: %v", err)
 	}
 	want := filepath.Join(home, ".keycraft", defaultVaultFile)
-	if filepath.Clean(got) != filepath.Clean(want) {
-		t.Fatalf("expected default path %q, got %q", want, got)
-	}
+	assertPathEqual(t, got, want, "expected default path")
 }
 
 func TestVersionString(t *testing.T) {
@@ -177,6 +165,22 @@ func TestVersionString(t *testing.T) {
 	}
 	if !strings.Contains(got, appVersion) {
 		t.Fatalf("version string missing app version %q: %q", appVersion, got)
+	}
+}
+
+func mustAbsPath(t *testing.T, path string) string {
+	t.Helper()
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatalf("filepath.Abs returned error: %v", err)
+	}
+	return absPath
+}
+
+func assertPathEqual(t *testing.T, got, want, msg string) {
+	t.Helper()
+	if filepath.Clean(got) != filepath.Clean(want) {
+		t.Fatalf("%s %q, got %q", msg, want, got)
 	}
 }
 
