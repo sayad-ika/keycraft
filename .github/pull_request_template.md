@@ -1,34 +1,78 @@
-## Summary
+<!-- Link to the issue this PR addresses -->
+Closes #
 
-<!-- Briefly describe what this PR changes and why. -->
+## Dependencies
 
-## Related Issue
+<!-- List any PRs that must be merged before this one -->
+<!--
+- #1234
+- _(none needed)_
+-->
 
-<!-- Link issue(s), e.g., Closes #123 -->
+## What does this PR do?
+
+<!-- Brief description of the change -->
 
 ## Type of Change
 
+<!-- Check one -->
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Refactor
-- [ ] Documentation update
-- [ ] Chore (build, CI, tooling, deps)
+- [ ] Documentation
 
-## Testing
+## What was changed
 
-<!-- Describe how this was tested (commands, environments, and key scenarios). -->
+<!-- Technical explanation for reviewers. Focus on important design decisions. -->
+
+## Changelog
+
+<!-- What should users see in the release notes? -->
+<!-- Examples:
+Feature: Users can now bulk archive items
+Bugfix: Fixed keyboard shortcut skipping extra frames
+None: not user visible
+-->
+
+
+## How to Test
+
+<!-- Describe how you tested your changes -->
+
+1.
+2.
+3.
+
+## How QA Should Test
+
+<!--
+Affected workflows:
+- Which user workflows does this change affect?
+
+Specific checks:
+- Step-by-step instructions for QA to verify the change
+-->
+
+## Rollback Plan
+
+<!-- What should be done if this causes problems in production? Examples:
+- Revert this PR
+- Remove feature flag "xyz" from all tenants
+- No rollback needed - totally safe change
+-->
 
 ## Checklist
 
-- [ ] I ran relevant tests locally.
-- [ ] I updated documentation (if needed).
-- [ ] I added/updated tests (if needed).
-- [ ] I checked for breaking changes.
+- [ ] My code follows the project style guidelines
+- [ ] Code passes linting and type checks
+- [ ] All tests pass
+- [ ] I have added tests for my changes (if applicable)
+- [ ] I have updated documentation (if applicable)
 
-## Screenshots / Recordings (if applicable)
+## Screenshots (if applicable)
 
-<!-- Add visual proof for UI changes. -->
+<!-- Add screenshots for UI changes -->
 
-## Breaking Changes
+## Note for Reviewer
 
-<!-- None or describe impact and migration steps. -->
+<!-- Any specific areas you want feedback on? -->
