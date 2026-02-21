@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -119,6 +121,66 @@ func TestParseTagsDeduplicatesCaseInsensitive(t *testing.T) {
 	}
 	if got[0] != "work" || got[1] != "banking" || got[2] != "personal" {
 		t.Fatalf("unexpected tag normalization order: %v", got)
+	}
+}
+
+func TestResolveVaultPathUsesEnvVar(t *testing.T) {
+	t.Setenv(vaultEnvVar, "./custom-vault.json")
+	got, err := resolveVaultPath("")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	want := mustAbsPath(t, "./custom-vault.json")
+	assertPathEqual(t, got, want, "expected env-based path")
+}
+
+func TestResolveVaultPathFlagOverridesEnv(t *testing.T) {
+	t.Setenv(vaultEnvVar, "./env-vault.json")
+	got, err := resolveVaultPath("./flag-vault.json")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	want := mustAbsPath(t, "./flag-vault.json")
+	assertPathEqual(t, got, want, "expected flag-based path")
+}
+
+func TestResolveVaultPathDefaultWhenUnset(t *testing.T) {
+	t.Setenv(vaultEnvVar, "")
+	got, err := resolveVaultPath("")
+	if err != nil {
+		t.Fatalf("resolveVaultPath returned error: %v", err)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("os.UserHomeDir returned error: %v", err)
+	}
+	want := filepath.Join(home, ".keycraft", defaultVaultFile)
+	assertPathEqual(t, got, want, "expected default path")
+}
+
+func TestVersionString(t *testing.T) {
+	got := versionString()
+	if !strings.Contains(got, appName) {
+		t.Fatalf("version string missing app name %q: %q", appName, got)
+	}
+	if !strings.Contains(got, appVersion) {
+		t.Fatalf("version string missing app version %q: %q", appVersion, got)
+	}
+}
+
+func mustAbsPath(t *testing.T, path string) string {
+	t.Helper()
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatalf("filepath.Abs returned error: %v", err)
+	}
+	return absPath
+}
+
+func assertPathEqual(t *testing.T, got, want, msg string) {
+	t.Helper()
+	if filepath.Clean(got) != filepath.Clean(want) {
+		t.Fatalf("%s %q, got %q", msg, want, got)
 	}
 }
 
