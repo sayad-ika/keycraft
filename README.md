@@ -77,5 +77,5 @@ keycraft backup --out ./vault-backup.json
 keycraft backup --verify
 
 # enforce policy in CI/local checks (non-zero exit when issues exist)
-keycraft audit --min-length 14 --max-age-days 365 --fail-on-issues
+keycraft audit --min-length 14 --m  ax-age-days 365 --fail-on-issues
 ```
