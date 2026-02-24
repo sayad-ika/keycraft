@@ -57,7 +57,7 @@ Override with `--vault` on commands, or set `KEYCRAFT_VAULT` for a default custo
 - `list`: list entries (`--search` supported)
 - `get`: fetch one entry by `--id` or `--service` + optional `--username`
 - `update`: update fields for an entry (`--id` required)
-- `delete`: delete entry (`--id` required, prompt unless `--force`)
+- `delete`: delete entry (`--id` required, prompt unless `--force` or `--yes`)
 - `generate`: generate strong random password
 - `change-master`: rotate master password and re-encrypt vault
 - `backup`: create timestamped encrypted backup of the vault file
@@ -77,5 +77,5 @@ keycraft backup --out ./vault-backup.json
 keycraft backup --verify
 
 # enforce policy in CI/local checks (non-zero exit when issues exist)
-keycraft audit --min-length 14 --max-age-days 365 --fail-on-issues
+keycraft audit --min-length 14 --m  ax-age-days 365 --fail-on-issues
 ```
