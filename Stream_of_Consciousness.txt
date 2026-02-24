@@ -1,0 +1,17 @@
+So started writing in this file to complete the stream of consciousness task. Also we're not to delete anything from this file, as it won't be use for judging us.
+
+--> Problem #1: We have to make 18 commits across three different braches for the first task ?
+
+--> Soln: So we don't have to make much progress to the actual project, I could just simply make an extra line and add a commit, but I'll try to add three features in three different branches and add some empty commits to fill up the commit.
+
+==> Asking codex to suggest me some features so that we could implement it in this git branch and the following two branches. Codex generated some features suggestions, so going through them.
+
+==> Adding .idea dir to the .gitignore file so that we could keep some temp file that is generated/created for this project.
+
+==> Codex added some features, now generating how to implement it so that I get the idea about how a cli based project works. Not just blindly copy-pasting. Although the features should be easy to implement. 
+
+==> I have one-on-one session, so let's do this after that. Hopefully we would be able to finish this task by today...
+
+==> since the review session will be a little late, let me just work on one feature. Added one feature, now committed and pushed to the cloud.
+
+so we don't have to make any meaningful changes for each commit, hence committing just changes in this file.
