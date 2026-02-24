@@ -73,6 +73,9 @@ keycraft backup
 # write backup to custom path
 keycraft backup --out ./vault-backup.json
 
+# verify backup
+keycraft backup --verify
+
 # enforce policy in CI/local checks (non-zero exit when issues exist)
 keycraft audit --min-length 14 --max-age-days 365 --fail-on-issues
 ```

@@ -624,11 +624,14 @@ func runChangeMaster(args []string) error {
 func runBackup(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-
+	
 	var vaultPath, outputPath string
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&outputPath, "out", "", "Backup output path (default: <vault-dir>/backups/vault-<timestamp>.json)")
-
+	
+	var verify bool
+	fs.BoolVar(&verify, "verify", false, "Verify backup contents after write")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -678,6 +681,19 @@ func runBackup(args []string) error {
 	}
 	if runtime.GOOS != "windows" {
 		_ = os.Chmod(destinationPath, 0o600)
+	}
+
+	if verify {
+		written, err := os.ReadFile(destinationPath)
+		if err != nil {
+			return err
+		}
+	    srcSum := sha256.Sum256(raw)
+	    dstSum := sha256.Sum256(written)
+	    if srcSum != dstSum {
+	        return errors.New("backup verification failed: checksum mismatch")
+	    }
+	    fmt.Println("Verification: OK")
 	}
 
 	checksum := sha256.Sum256(raw)
