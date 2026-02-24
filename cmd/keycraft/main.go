@@ -493,10 +493,11 @@ func runDelete(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	var vaultPath, id string
-	var force bool
+	var force, yes bool
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&id, "id", "", "Entry ID (required)")
 	fs.BoolVar(&force, "force", false, "Delete without confirmation")
+	fs.BoolVar(&yes, "yes", false, "Alias for --force")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -526,6 +527,10 @@ func runDelete(args []string) error {
 		return err
 	}
 	e := data.Entries[idx]
+
+	if yes {
+    	force = true
+	}
 
 	if !force {
 		confirm, err := readLine(fmt.Sprintf("Delete %q (%q)? Type 'yes' to confirm: ", e.Service, e.Username), true)
