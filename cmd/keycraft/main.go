@@ -334,13 +334,14 @@ func runGet(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	var vaultPath, id, service, username string
-	var showPassword bool
+	var showPassword, maskedPassword bool
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&id, "id", "", "Entry ID")
 	fs.StringVar(&service, "service", "", "Service name")
 	fs.StringVar(&username, "username", "", "Username/login")
 	fs.BoolVar(&showPassword, "show-password", false, "Show plaintext password")
-
+	fs.BoolVar(&maskedPassword, "masked-password", false, "Show masked password")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -370,9 +371,15 @@ func runGet(args []string) error {
 	}
 	e := data.Entries[idx]
 
+	if showPassword && maskedPassword {
+    	return errors.New("use only one of --show-password or --masked-password")
+	}
+
 	password := "<hidden>"
 	if showPassword {
-		password = e.Password
+	    password = e.Password
+	} else if maskedPassword {
+	    password = maskPassword(e.Password)
 	}
 
 	fmt.Printf("ID:        %s\n", e.ID)
@@ -1528,4 +1535,19 @@ Examples:
   keycraft backup
   keycraft audit --fail-on-issues
   keycraft version`)
+}
+
+func maskPassword(input string) string {
+    runes := []rune(input)
+    n := len(runes)
+    if n == 0 {
+        return ""
+    }
+    if n <= 2 {
+        return strings.Repeat("*", n)
+    }
+    if n <= 6 {
+        return string(runes[0]) + strings.Repeat("*", n-2) + string(runes[n-1])
+    }
+    return string(runes[:2]) + strings.Repeat("*", n-4) + string(runes[n-2:])
 }

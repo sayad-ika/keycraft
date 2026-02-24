@@ -81,4 +81,7 @@ keycraft audit --min-length 14 --m  ax-age-days 365 --fail-on-issues
 
 # generate 5 random passwords of length 20
 keycraft generate --length 20 --count 5
+
+# get masked password
+keycraft get --service <service_name> --masked-password
 ```
