@@ -12,4 +12,6 @@ So started writing in this file to complete the stream of consciousness task. Al
 
 ==> I have one-on-one session, so let's do this after that. Hopefully we would be able to finish this task by today...
 
-==> since the review session will be a little late, let me just work on one feature
+==> since the review session will be a little late, let me just work on one feature. Added one feature, now committed and pushed to the cloud.
+
+so we don't have to make any meaningful changes for each commit, hence committing just changes in this file.
