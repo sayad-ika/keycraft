@@ -555,9 +555,10 @@ func runGenerate(args []string) error {
 	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var length int
+	var length, count int
 	var noSymbols, noAmbiguous bool
 	fs.IntVar(&length, "length", 24, "Password length")
+	fs.IntVar(&count, "count", 1, "Number of passwords to generate")
 	fs.BoolVar(&noSymbols, "no-symbols", false, "Exclude symbols")
 	fs.BoolVar(&noAmbiguous, "no-ambiguous", false, "Exclude ambiguous characters (O0Il1)")
 
@@ -567,13 +568,19 @@ func runGenerate(args []string) error {
 	if fs.NArg() != 0 {
 		return fmt.Errorf("unexpected arguments: %s", strings.Join(fs.Args(), " "))
 	}
-
-	pw, err := generatePassword(length, !noSymbols, noAmbiguous)
-	if err != nil {
-		return err
+	if count < 1	{
+		return errors.New("--count must be at least 1")
 	}
-
-	fmt.Println(pw)
+	if count > 1000 {
+		return errors.New("--count must be at most 1000")
+	}
+	for i := 0; i < count; i++ {
+	    pw, err := generatePassword(length, !noSymbols, noAmbiguous)
+	    if err != nil {
+	        return err
+	    }
+	    fmt.Println(pw)
+	}
 	return nil
 }
 
