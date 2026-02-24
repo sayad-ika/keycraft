@@ -24,3 +24,5 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> branched off to a new branch (2nd branch) from the HEAD of the 1st branch. the main file is way too big, guess if I could trim it somehow. anyhow added another feature, it should make up one commit.
 
 ==> now will add a test for the latest feature that I added, although it's working, ran the test file it's working, so I guess it's fine for now.
+
+==> I guess I could just add a new feature for all the features that I'm going to add from now on, or maybe not. anyhow I should update the README.md file, that'll make one less commit to go.
