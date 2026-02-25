@@ -34,3 +34,5 @@ so we don't have to make any meaningful changes for each commit, hence committin
 
 
 ==> completed 12 commits for two branches, now moving on to the third branch (which is this branch). Now let's try to quickly add two feature and update files accross six commits.
+
+==> added one feature for while add password, now adding to the update password function as well. this will make up two commits
