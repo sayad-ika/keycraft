@@ -278,10 +278,11 @@ func runList(args []string) error {
 	fs := flag.NewFlagSet("list", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var vaultPath, search string
+	var vaultPath, search, sortBy string
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&search, "search", "", "Case-insensitive search filter")
-
+	fs.StringVar(&sortBy, "sort", "service", "Sort entries by: service|updated")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -301,6 +302,10 @@ func runList(args []string) error {
 	if err != nil {
 		return err
 	}
+	sortBy = strings.ToLower(strings.TrimSpace(sortBy))
+	if sortBy != "service" && sortBy != "updated" {
+	    return errors.New("--sort must be one of: service, updated")
+	}
 
 	var entries []entry
 	for _, e := range data.Entries {
@@ -315,10 +320,18 @@ func runList(args []string) error {
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
-		if strings.EqualFold(entries[i].Service, entries[j].Service) {
-			return strings.ToLower(entries[i].Username) < strings.ToLower(entries[j].Username)
-		}
-		return strings.ToLower(entries[i].Service) < strings.ToLower(entries[j].Service)
+	    if sortBy == "updated" {
+	        ti := sortableUpdatedTime(entries[i])
+	        tj := sortableUpdatedTime(entries[j])
+	        if !ti.Equal(tj) {
+	            return ti.After(tj) // newest first
+	        }
+	    }
+
+	    if strings.EqualFold(entries[i].Service, entries[j].Service) {
+	        return strings.ToLower(entries[i].Username) < strings.ToLower(entries[j].Username)
+	    }
+	    return strings.ToLower(entries[i].Service) < strings.ToLower(entries[j].Service)
 	})
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
@@ -327,6 +340,13 @@ func runList(args []string) error {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", e.ID, e.Service, e.Username, e.UpdatedAt)
 	}
 	return w.Flush()
+}
+
+func sortableUpdatedTime(e entry) time.Time {
+    if ts, ok := entryTimestamp(e); ok {
+        return ts
+    }
+    return time.Time{}
 }
 
 func runGet(args []string) error {

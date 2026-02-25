@@ -26,3 +26,6 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> now will add a test for the latest feature that I added, although it's working, ran the test file it's working, so I guess it's fine for now.
 
 ==> I guess I could just add a new feature for all the features that I'm going to add from now on, or maybe not. anyhow I should update the README.md file, that'll make one less commit to go.
+
+# 25-02-26
+==> So today's the deadline, trying to finish this task in this go. 9 more commits to go.
