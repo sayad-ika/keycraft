@@ -493,10 +493,11 @@ func runDelete(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	var vaultPath, id string
-	var force bool
+	var force, yes bool
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&id, "id", "", "Entry ID (required)")
 	fs.BoolVar(&force, "force", false, "Delete without confirmation")
+	fs.BoolVar(&yes, "yes", false, "Alias for --force")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -527,6 +528,10 @@ func runDelete(args []string) error {
 	}
 	e := data.Entries[idx]
 
+	if yes {
+    	force = true
+	}
+
 	if !force {
 		confirm, err := readLine(fmt.Sprintf("Delete %q (%q)? Type 'yes' to confirm: ", e.Service, e.Username), true)
 		if err != nil {
@@ -550,9 +555,10 @@ func runGenerate(args []string) error {
 	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var length int
+	var length, count int
 	var noSymbols, noAmbiguous bool
 	fs.IntVar(&length, "length", 24, "Password length")
+	fs.IntVar(&count, "count", 1, "Number of passwords to generate")
 	fs.BoolVar(&noSymbols, "no-symbols", false, "Exclude symbols")
 	fs.BoolVar(&noAmbiguous, "no-ambiguous", false, "Exclude ambiguous characters (O0Il1)")
 
@@ -562,13 +568,19 @@ func runGenerate(args []string) error {
 	if fs.NArg() != 0 {
 		return fmt.Errorf("unexpected arguments: %s", strings.Join(fs.Args(), " "))
 	}
-
-	pw, err := generatePassword(length, !noSymbols, noAmbiguous)
-	if err != nil {
-		return err
+	if count < 1	{
+		return errors.New("--count must be at least 1")
 	}
-
-	fmt.Println(pw)
+	if count > 1000 {
+		return errors.New("--count must be at most 1000")
+	}
+	for i := 0; i < count; i++ {
+	    pw, err := generatePassword(length, !noSymbols, noAmbiguous)
+	    if err != nil {
+	        return err
+	    }
+	    fmt.Println(pw)
+	}
 	return nil
 }
 
@@ -624,11 +636,14 @@ func runChangeMaster(args []string) error {
 func runBackup(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-
+	
 	var vaultPath, outputPath string
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&outputPath, "out", "", "Backup output path (default: <vault-dir>/backups/vault-<timestamp>.json)")
-
+	
+	var verify bool
+	fs.BoolVar(&verify, "verify", false, "Verify backup contents after write")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -678,6 +693,19 @@ func runBackup(args []string) error {
 	}
 	if runtime.GOOS != "windows" {
 		_ = os.Chmod(destinationPath, 0o600)
+	}
+
+	if verify {
+		written, err := os.ReadFile(destinationPath)
+		if err != nil {
+			return err
+		}
+	    srcSum := sha256.Sum256(raw)
+	    dstSum := sha256.Sum256(written)
+	    if srcSum != dstSum {
+	        return errors.New("backup verification failed: checksum mismatch")
+	    }
+	    fmt.Println("Verification: OK")
 	}
 
 	checksum := sha256.Sum256(raw)
