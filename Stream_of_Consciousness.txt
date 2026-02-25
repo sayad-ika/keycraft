@@ -44,3 +44,14 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> updating the READM.md, jsut added a simple example of the new feature.
 
 ==> so for the last commit of the 18 commits, let's just update this file without making any changes to the app. it's a wrap for task-1 :)
+
+
+## Task-2 (Rebase):
+
+==> Problem: So the problem I'm facing right now is that I maintained this file for task-1 pretty easily since, I was updating this file then making changes and committing accordingly, but then for the task-2 I have maintain this file as well, but if I switch to first branch, it'll reset this file as well.
+
+==> Soln: Therefore to solve this problem, created this branch just to maintain this stream of consciousness for task-2. Hopefully, it'll fullfill our requirements. I'll commit to this branch and then link it to the updated PR for those three branches.
+
+==> Problem: Now to rebase the first branch, if I rebase it from the task-1 branch, it'll reset that and we won't anything to show for task-1
+
+==> Soln: To solve this, let's create another branch from the latest third branch "feat/new-feature-3" (which contains initial 18 commits across three branches), then just reset it's head to the HEAD of the first branch "feat/new-feature-1".
