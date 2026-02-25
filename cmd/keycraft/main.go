@@ -491,6 +491,7 @@ func runUpdate(args []string) error {
 		if e.Password == "" {
 			return errors.New("--password cannot be empty")
 		}
+		fmt.Fprintf(os.Stderr, "Password strength hint: %s\n", passwordStrengthHint(e.Password))
 	}
 	if urlOpt.set {
 		e.URL = strings.TrimSpace(urlOpt.value)
