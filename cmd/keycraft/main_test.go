@@ -208,3 +208,11 @@ func TestMaskPassword(t *testing.T) {
         t.Fatalf("unexpected mask: %q", got)
     }
 }
+
+func TestSortableUpdatedTime(t *testing.T) {
+    e := entry{UpdatedAt: "2026-02-01T00:00:00Z"}
+    ts := sortableUpdatedTime(e)
+    if ts.IsZero() {
+        t.Fatal("expected parsed timestamp")
+    }
+}
