@@ -107,7 +107,7 @@ func main() {
 
 	command := os.Args[1]
 	if command == "version" || command == "-v" || command == "--version" {
-		fmt.Println(versionString())
+		fmt.Println(runVersion(os.Args[2:]))
 		return
 	}
 	if command == "help" || command == "-h" || command == "--help" {
@@ -138,7 +138,7 @@ func main() {
 	case "audit":
 		err = runAudit(os.Args[2:])
 	case "version":
-		fmt.Println(versionString())
+		err = runVersion(os.Args[2:])
 		return
 	default:
 		printUsage()
@@ -1587,4 +1587,26 @@ func passwordStrengthHint(password string) string {
     default:
         return "weak"
     }
+}
+
+func runVersion(args []string) error {
+    fs := flag.NewFlagSet("version", flag.ContinueOnError)
+    fs.SetOutput(os.Stderr)
+
+    var short bool
+    fs.BoolVar(&short, "short", false, "Print version number only")
+
+    if err := fs.Parse(args); err != nil {
+        return err
+    }
+    if fs.NArg() != 0 {
+        return fmt.Errorf("unexpected arguments: %s", strings.Join(fs.Args(), " "))
+    }
+
+    if short {
+        fmt.Println(appVersion)
+        return nil
+    }
+    fmt.Println(versionString())
+    return nil
 }
