@@ -84,4 +84,7 @@ keycraft generate --length 20 --count 5
 
 # get masked password
 keycraft get --service <service_name> --masked-password
+
+# list out the service by latest update time or service name
+keycraft list --sort <updated|service>
 ```
