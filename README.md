@@ -87,4 +87,8 @@ keycraft get --service <service_name> --masked-password
 
 # list out the service by latest update time or service name
 keycraft list --sort <updated|service>
+
+# get the version of the app
+keycraft version
+keycraft version --short
 ```
