@@ -252,6 +252,8 @@ func runAdd(args []string) error {
 		return fmt.Errorf("entry already exists for service=%q username=%q", service, username)
 	}
 
+	fmt.Fprintf(os.Stderr, "Password strength hint: %s\n", passwordStrengthHint(accountPassword))
+
 	now := nowUTC()
 	e := entry{
 		ID:        generateEntryID(),
@@ -489,6 +491,7 @@ func runUpdate(args []string) error {
 		if e.Password == "" {
 			return errors.New("--password cannot be empty")
 		}
+		fmt.Fprintf(os.Stderr, "Password strength hint: %s\n", passwordStrengthHint(e.Password))
 	}
 	if urlOpt.set {
 		e.URL = strings.TrimSpace(urlOpt.value)
@@ -1570,4 +1573,18 @@ func maskPassword(input string) string {
         return string(runes[0]) + strings.Repeat("*", n-2) + string(runes[n-1])
     }
     return string(runes[:2]) + strings.Repeat("*", n-4) + string(runes[n-2:])
+}
+
+func passwordStrengthHint(password string) string {
+    length := len([]rune(password))
+    classes := passwordClassCount(password)
+
+    switch {
+    case length >= 16 && classes >= 3:
+        return "strong"
+    case length >= 12 && classes >= 2:
+        return "ok"
+    default:
+        return "weak"
+    }
 }
