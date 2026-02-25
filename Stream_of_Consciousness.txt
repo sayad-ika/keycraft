@@ -44,3 +44,42 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> updating the READM.md, jsut added a simple example of the new feature.
 
 ==> so for the last commit of the 18 commits, let's just update this file without making any changes to the app. it's a wrap for task-1 :)
+
+
+## Task-2 (Rebase):
+
+==> Problem: So the problem I'm facing right now is that I maintained this file for task-1 pretty easily since, I was updating this file then making changes and committing accordingly, but then for the task-2 I have maintain this file as well, but if I switch to first branch, it'll reset this file as well.
+
+==> Soln: Therefore to solve this problem, created this branch just to maintain this stream of consciousness for task-2. Hopefully, it'll fullfill our requirements. I'll commit to this branch and then link it to the updated PR for those three branches.
+
+==> Problem: Now to rebase the first branch, if I rebase it from the task-1 branch, it'll reset that and we won't anything to show for task-1
+
+==> Soln: To solve this, let's create another branch from the latest third branch "feat/new-feature-3" (which contains initial 18 commits across three branches), then just reset it's head to the HEAD of the first branch "feat/new-feature-1".
+
+==> Now rebasing the first branch, squashing from 6 commits to 3 commits by rebasing interactively, now in order to do that, we could apply this cmd:
+
+`git rebase --interactive <hash>^` -- hash should be the first commit of the first-branch where we started making changes after branching off from another branch.
+
+==> Then simply squash two commits into one, and make the commit messages from two into one (merging if commit message needs to be clear, otherwise skipping).
+
+==> Rebased successfully without any conflicts. So pushing the updated branch into remote.
+
+
+==> Problem: We have to do the same for the second-branch as well. We have rebase and squash 6 commits into one.
+
+==> Soln: First like the previous one, reset the HEAD from third branch "feat/new-feature-3" to "feat/new-feature-2", then rebase against the newly updated rebased first-branch (feat/rebase-feature-1) that we just worked on to align with the updated changes. 
+
+==> Problem: Getting merge conflicts.
+
+==> Soln: Gone through the Slides, and talked with Claude, the approach I'm taking is that using the tip of the old first-branch and rebase onto the new rebased first-branch (feat/rebase-feature-1), then rebase the second-branch that I'm going to rebase and squash the 6 commits into 3 commits.
+
+used this cmd: 
+
+`git rebase --onto feat/rebase-branch-1 <old_first_branch_head_hash> feat/rebase-branch-2`
+
+==> successfully rebased the second-branch as well, pushing it to the remote.
+
+
+==> Problem: Finally need to rebase and squash the third branch as well.
+
+==> Soln: Similarly to the second branch, we're using the first-branch-3 (feat/new-feature-3), then rebasing it onto the second-rebased-branch (feat/rebase-branch-2), then simply just used rebase interactively and squash three commits to make three commits in total.
