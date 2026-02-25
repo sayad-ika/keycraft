@@ -55,3 +55,11 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> Problem: Now to rebase the first branch, if I rebase it from the task-1 branch, it'll reset that and we won't anything to show for task-1
 
 ==> Soln: To solve this, let's create another branch from the latest third branch "feat/new-feature-3" (which contains initial 18 commits across three branches), then just reset it's head to the HEAD of the first branch "feat/new-feature-1".
+
+==> Now rebasing the first branch, squashing from 6 commits to 3 commits by rebasing interactively, now in order to do that, we could apply this cmd:
+
+`git rebase --interactive <hash>^` -- hash should be the first commit of the first-branch where we started making changes after branching off from another branch.
+
+==> Then simply squash two commits into one, and make the commit messages from two into one (merging if commit message needs to be clear, otherwise skipping).
+
+==> Rebased successfully without any conflicts. So pushing the updated branch into remote.
