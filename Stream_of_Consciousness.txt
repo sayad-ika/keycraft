@@ -40,3 +40,7 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> since we're allowed to make an empty commit without any meaningful changes, let's just update stream of consciousness to make up one commit.
 
 ==> now down to last 3 commits, will add another feature and update readme that should cover up two commits, then for the last one, let's just update this file.
+
+==> updating the READM.md, jsut added a simple example of the new feature.
+
+==> so for the last commit of the 18 commits, let's just update this file without making any changes to the app. it's a wrap for task-1 :)
