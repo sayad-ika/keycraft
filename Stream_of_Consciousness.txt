@@ -63,3 +63,18 @@ so we don't have to make any meaningful changes for each commit, hence committin
 ==> Then simply squash two commits into one, and make the commit messages from two into one (merging if commit message needs to be clear, otherwise skipping).
 
 ==> Rebased successfully without any conflicts. So pushing the updated branch into remote.
+
+
+==> Problem: We have to do the same for the second-branch as well. We have rebase and squash 6 commits into one.
+
+==> Soln: First like the previous one, reset the HEAD from third branch "feat/new-feature-3" to "feat/new-feature-2", then rebase against the newly updated rebased first-branch (feat/rebase-feature-1) that we just worked on to align with the updated changes. 
+
+==> Problem: Getting merge conflicts.
+
+==> Soln: Gone through the Slides, and talked with Claude, the approach I'm taking is that using the tip of the old first-branch and rebase onto the new rebased first-branch (feat/rebase-feature-1), then rebase the second-branch that I'm going to rebase and squash the 6 commits into 3 commits.
+
+used this cmd: 
+
+`git rebase --onto feat/rebase-branch-1 <old_first_branch_head_hash> feat/rebase-branch-2`
+
+==> successfully rebased the second-branch as well, pushing it to the remote.
