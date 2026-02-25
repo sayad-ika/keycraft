@@ -278,10 +278,11 @@ func runList(args []string) error {
 	fs := flag.NewFlagSet("list", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var vaultPath, search string
+	var vaultPath, search, sortBy string
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&search, "search", "", "Case-insensitive search filter")
-
+	fs.StringVar(&sortBy, "sort", "service", "Sort entries by: service|updated")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -301,6 +302,10 @@ func runList(args []string) error {
 	if err != nil {
 		return err
 	}
+	sortBy = strings.ToLower(strings.TrimSpace(sortBy))
+	if sortBy != "service" && sortBy != "updated" {
+	    return errors.New("--sort must be one of: service, updated")
+	}
 
 	var entries []entry
 	for _, e := range data.Entries {
@@ -315,10 +320,18 @@ func runList(args []string) error {
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
-		if strings.EqualFold(entries[i].Service, entries[j].Service) {
-			return strings.ToLower(entries[i].Username) < strings.ToLower(entries[j].Username)
-		}
-		return strings.ToLower(entries[i].Service) < strings.ToLower(entries[j].Service)
+	    if sortBy == "updated" {
+	        ti := sortableUpdatedTime(entries[i])
+	        tj := sortableUpdatedTime(entries[j])
+	        if !ti.Equal(tj) {
+	            return ti.After(tj) // newest first
+	        }
+	    }
+
+	    if strings.EqualFold(entries[i].Service, entries[j].Service) {
+	        return strings.ToLower(entries[i].Username) < strings.ToLower(entries[j].Username)
+	    }
+	    return strings.ToLower(entries[i].Service) < strings.ToLower(entries[j].Service)
 	})
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
@@ -329,18 +342,26 @@ func runList(args []string) error {
 	return w.Flush()
 }
 
+func sortableUpdatedTime(e entry) time.Time {
+    if ts, ok := entryTimestamp(e); ok {
+        return ts
+    }
+    return time.Time{}
+}
+
 func runGet(args []string) error {
 	fs := flag.NewFlagSet("get", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
 	var vaultPath, id, service, username string
-	var showPassword bool
+	var showPassword, maskedPassword bool
 	fs.StringVar(&vaultPath, "vault", "", "Vault file path")
 	fs.StringVar(&id, "id", "", "Entry ID")
 	fs.StringVar(&service, "service", "", "Service name")
 	fs.StringVar(&username, "username", "", "Username/login")
 	fs.BoolVar(&showPassword, "show-password", false, "Show plaintext password")
-
+	fs.BoolVar(&maskedPassword, "masked-password", false, "Show masked password")
+	
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -370,9 +391,15 @@ func runGet(args []string) error {
 	}
 	e := data.Entries[idx]
 
+	if showPassword && maskedPassword {
+    	return errors.New("use only one of --show-password or --masked-password")
+	}
+
 	password := "<hidden>"
 	if showPassword {
-		password = e.Password
+	    password = e.Password
+	} else if maskedPassword {
+	    password = maskPassword(e.Password)
 	}
 
 	fmt.Printf("ID:        %s\n", e.ID)
@@ -1528,4 +1555,19 @@ Examples:
   keycraft backup
   keycraft audit --fail-on-issues
   keycraft version`)
+}
+
+func maskPassword(input string) string {
+    runes := []rune(input)
+    n := len(runes)
+    if n == 0 {
+        return ""
+    }
+    if n <= 2 {
+        return strings.Repeat("*", n)
+    }
+    if n <= 6 {
+        return string(runes[0]) + strings.Repeat("*", n-2) + string(runes[n-1])
+    }
+    return string(runes[:2]) + strings.Repeat("*", n-4) + string(runes[n-2:])
 }

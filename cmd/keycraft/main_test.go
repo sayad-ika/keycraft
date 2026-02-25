@@ -193,3 +193,26 @@ func assertHasIssue(t *testing.T, issues []auditIssue, kind, entryID string) {
 	}
 	t.Fatalf("expected issue kind=%s id=%s not found", kind, entryID)
 }
+
+func TestMaskPassword(t *testing.T) {
+    if got := maskPassword(""); got != "" {
+        t.Fatalf("expected empty mask, got %q", got)
+    }
+    if got := maskPassword("ab"); got != "**" {
+        t.Fatalf("expected '**', got %q", got)
+    }
+    if got := maskPassword("abcdef"); got != "a****f" {
+        t.Fatalf("unexpected mask: %q", got)
+    }
+    if got := maskPassword("abcdefgh"); got != "ab****gh" {
+        t.Fatalf("unexpected mask: %q", got)
+    }
+}
+
+func TestSortableUpdatedTime(t *testing.T) {
+    e := entry{UpdatedAt: "2026-02-01T00:00:00Z"}
+    ts := sortableUpdatedTime(e)
+    if ts.IsZero() {
+        t.Fatal("expected parsed timestamp")
+    }
+}
