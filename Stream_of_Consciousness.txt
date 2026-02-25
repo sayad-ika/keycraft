@@ -78,3 +78,8 @@ used this cmd:
 `git rebase --onto feat/rebase-branch-1 <old_first_branch_head_hash> feat/rebase-branch-2`
 
 ==> successfully rebased the second-branch as well, pushing it to the remote.
+
+
+==> Problem: Finally need to rebase and squash the third branch as well.
+
+==> Soln: Similarly to the second branch, we're using the first-branch-3 (feat/new-feature-3), then rebasing it onto the second-rebased-branch (feat/rebase-branch-2), then simply just used rebase interactively and squash three commits to make three commits in total.
