@@ -83,3 +83,18 @@ used this cmd:
 ==> Problem: Finally need to rebase and squash the third branch as well.
 
 ==> Soln: Similarly to the second branch, we're using the first-branch-3 (feat/new-feature-3), then rebasing it onto the second-rebased-branch (feat/rebase-branch-2), then simply just used rebase interactively and squash three commits to make three commits in total.
+
+
+==> Problem: For task-2 we were supposed to update the first three PR's not create a separate branch off of them.
+
+==> Soln: Although we did the same thing as above, now I'm going to just update the same PR for task-1, (rebasing and squashing 6 commits into 3 commits) for each PR and force pushing it. So for the first branch it's pretty easy, just rebase and squashed it.
+
+==> Then for the second branch, first rebasing it onto the first rebased branch using the above cmd: 
+
+`git rebase --onto feat/rebase-branch-1 <old_first_branch_head_hash> feat/rebase-branch-2`
+
+==> now second branch is aligned with the first branch (that was rebased earlier), now we just to rebase and squash the second branch only by using interactive mode to make the 6 commits into 3 commits. Did it now both first branch and second branch has 3 commits each.
+
+==> Lastly, following the same approach as for the second branch, first rebased it using `--onto` flag and using old_hash, then the third branch is also aligned with the new first & second branch with 3 commits each.
+
+==> Completed the rebase, now just squashing interactively, updated it and forced pushed it.
